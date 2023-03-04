@@ -1,14 +1,11 @@
+#ifndef Graph_h
+#define Graph_h
+
 #include <iostream>
 #include <random>
 #include <vector>
 #include <unordered_set>
-#include <fstream>
-#include <string>
-
-std::random_device rd;  // Only used once to initialise (seed) engine
-std::mt19937 rng(rd()); // Random-number engine used (Mersenne-Twister in this case)
-
-// This class is not good at removing nodes!
+#include <time.h>
 
 class Graph
 {
@@ -19,6 +16,7 @@ private:
 
     static std::pair<int, int> find_link(std::vector<std::unordered_set<int>> &edges, int possibilities)
     {
+        static std::mt19937 rng(time(nullptr));
         std::uniform_int_distribution<int> uni(0, possibilities - 1); // Guaranteed unbiased
         int index_to_delete = uni(rng);
         int node = 0;
@@ -128,67 +126,19 @@ public:
 
     void remove_all_links_from_random_node()
     {
+        static std::mt19937 rng(time(nullptr));
         std::uniform_int_distribution<int> uni(0, this->edges.size() - 1); // Guaranteed unbiased
         int node = uni(rng);
         this->remove_all_node_links(node);
     }
-};
 
-int gcd(int a, int b)
-{
-    if (a == 0)
-        return b;
-    return gcd(b % a, a);
-}
-
-int lcm(int a, int b)
-{
-    return (a * b) / gcd(a, b);
-}
-
-int main()
-{
-    std::cout << "Input the number of nodes" << std::endl;
-    int node_count;
-    std::cin >> node_count;
-    Graph *g = new Graph(node_count);
-
-    std::cout << "Input the number of simulation steps" << std::endl;
-    int simulation_steps;
-    std::cin >> simulation_steps;
-
-    std::pair<int, int> alpha;
-    std::cout << "Input alpha as numberator and denominator (n d)" << std::endl;
-    std::cin >> alpha.first >> alpha.second;
-
-    std::pair<int, int> r;
-    std::cout << "Input r as numerator and denominator (n d)" << std::endl;
-    std::cin >> r.first >> r.second;
-
-    std::pair<int, int> min_step = {gcd(alpha.first, r.first), lcm(alpha.second, r.second)};
-
-    int alpha_period = (alpha.first * min_step.second) / (alpha.second * min_step.first);
-    int r_period = (r.first * min_step.second) / (r.second * min_step.first);
-
-    std::string filename = "nodes_" + std::to_string(node_count) +
-                           "_steps_" + std::to_string(simulation_steps) +
-                           "_alpha_" + std::to_string(alpha.first) + "d" + std::to_string(alpha.second) +
-                           "_r_" + std::to_string(r.first) + "d" + std::to_string(r.second) +
-                           ".txt";
-    std::ofstream results_file(filename);
-
-    for (int step = 0; step < simulation_steps; step++)
+    void get_degree_distribution(std::vector<int> &degree_distribution)
     {
-        float avg_degree = float(2 * g->number_of_edges()) / float(g->number_of_nodes());
-        results_file << avg_degree << " \n";
-        if (step % alpha_period == 0)
+        for (int node = 0; node < this->number_of_nodes(); node++)
         {
-            g->add_random_link();
-        }
-        if (step % r_period == 0)
-        {
-            g->remove_all_links_from_random_node();
+            degree_distribution[node] = this->edges[node].size();
         }
     }
-    results_file.close();
-}
+};
+
+#endif
