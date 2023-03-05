@@ -4,39 +4,100 @@
 #include <iostream>
 #include <random>
 #include <vector>
-#include <unordered_set>
+#include <set>
+#include <queue>
 #include <time.h>
 
 class Graph
 {
 private:
     int edge_count;
-    std::vector<std::unordered_set<int>> edges;
-    std::vector<std::unordered_set<int>> non_edges;
+    std::vector<std::set<unsigned short int>> edges;
 
-    static std::pair<int, int> find_link(std::vector<std::unordered_set<int>> &edges, int possibilities)
+    static int generate_random_number(int last_not_included)
     {
         static std::mt19937 rng(time(nullptr));
-        std::uniform_int_distribution<int> uni(0, possibilities - 1); // Guaranteed unbiased
-        int index_to_delete = uni(rng);
+        std::uniform_int_distribution<int> uni(0, last_not_included - 1); // Guaranteed unbiased
+        return uni(rng);
+    }
+
+    std::pair<int, int> find_link(int possibilities)
+    {
+        int index_to_delete = generate_random_number(possibilities);
         int node = 0;
         int link_count = 0;
-        while (link_count + edges[node].size() <= index_to_delete)
+        while (link_count + this->edges[node].size() <= index_to_delete)
         {
-            link_count += edges[node].size();
+            link_count += this->edges[node].size();
             node++;
         };
 
-        return {node, *std::next(edges[node].begin(), index_to_delete - link_count)};
+        return {node, *std::next(this->edges[node].begin(), index_to_delete - link_count)};
     }
 
-    static void add_link(std::vector<std::unordered_set<int>> &edges, int from, int to)
+    std::pair<int, int> find_missing_link(int possibilities)
+    {
+        int index_to_add = generate_random_number(possibilities);
+        int node = 0;
+        int link_count = 0;
+        while (link_count + this->number_of_nodes() - 1 - this->edges[node].size() <= index_to_add)
+        {
+            link_count += this->number_of_nodes() - 1 - this->edges[node].size();
+            node++;
+        };
+
+
+        int link_index = index_to_add - link_count;
+
+        this->edges[node].insert(node);
+
+        int curr = -1;
+        auto next = this->edges[node].begin();
+        int empty = 0;
+        int next_space = *next;
+        while (empty + next_space <= link_index)
+        {
+            empty += next_space;
+            curr = *next;
+            next++;
+            next_space = next != this->edges[node].end() ? *next - curr - 1 : this->number_of_nodes();
+        }
+
+        int to = curr + (link_index + 1 - empty);
+
+        this->edges[node].erase(node);
+
+        return {node, to};
+        /*
+        // naive approach;
+        int to = 0;
+        int empty = 0;
+        while (true)
+        {
+            if (to != node)
+            {
+                if (this->edges[node].find(to) == this->edges[node].end()) // edge not in set
+                {
+                    empty++;
+                    if (empty >= link_index)
+                    {
+                        break;
+                    }
+                }
+            }
+            to++;
+        }
+        return {node, to};
+        */
+    }
+
+    static void add_link(std::vector<std::set<unsigned short int>> &edges, int from, int to)
     {
         edges[from].insert(to);
         edges[to].insert(from);
     }
 
-    static void remove_link(std::vector<std::unordered_set<int>> &edges, int from, int to)
+    static void remove_link(std::vector<std::set<unsigned short int>> &edges, int from, int to)
     {
         edges[from].erase(to);
         edges[to].erase(from);
@@ -50,7 +111,7 @@ private:
         {
             throw std::runtime_error("There's no missing links in a complete network");
         }
-        return find_link(this->non_edges, possibilities);
+        return this->find_missing_link(possibilities);
     }
 
     std::pair<int, int> choose_random_existing_link()
@@ -60,40 +121,52 @@ private:
         {
             throw std::runtime_error("There's no links in an empty network");
         }
-        return find_link(this->edges, possibilities);
+        return find_link(possibilities);
     }
 
     void remove_all_node_links(int node)
     {
         this->edge_count -= this->edges[node].size();
+        std::vector<int> to_remove;
         for (int to : this->edges[node])
         {
-            add_link(this->non_edges, node, to);
-            this->edges[to].erase(node);
+            to_remove.push_back(to);
         }
-        this->edges[node].clear();
+        for (int to : to_remove)
+        {
+            remove_link(this->edges, node, to);
+        }
+    }
+
+    static int bfs(std::vector<std::set<unsigned short int>> &edges, int start_node, std::vector<bool> &visited)
+    {
+        int component_size = 0;
+
+        std::queue<int> marked_to_visit;
+        visited[start_node] = true;
+        component_size++;
+        marked_to_visit.push(start_node);
+
+        while (!marked_to_visit.empty())
+        {
+            int node_visited = marked_to_visit.front();
+            marked_to_visit.pop();
+            for (int adjacent : edges[node_visited])
+            {
+                if (!visited[adjacent])
+                {
+                    visited[adjacent] = true;
+                    component_size++;
+                    marked_to_visit.push(adjacent);
+                }
+            }
+        }
+        return component_size;
     }
 
 public:
-    Graph(int node_count) : edge_count(0), edges(node_count, std::unordered_set<int>()), non_edges(node_count, std::unordered_set<int>(node_count - 1))
+    Graph(int node_count) : edge_count(0), edges(node_count, std::set<unsigned short int>())
     {
-        for (int node = 0; node < node_count; node++)
-        {
-            int edge = 0;
-            for (int connection = 0; connection < node_count - 1; connection++)
-            {
-                if (edge != node)
-                {
-                    non_edges[node].insert(edge);
-                }
-                else
-                {
-                    edge++;
-                    non_edges[node].insert(edge);
-                }
-                edge++;
-            }
-        }
     }
 
     int number_of_edges()
@@ -106,13 +179,22 @@ public:
         return this->edges.size();
     }
 
+    void print()
+    {
+        for (auto node : this->edges)
+        {
+            for (auto edge : node)
+            {
+            }
+        }
+    }
+
     void add_random_link()
     {
         auto [from, to] = this->choose_random_non_existing_link();
 
         this->edge_count += 1;
         add_link(this->edges, from, to);
-        remove_link(this->non_edges, from, to);
     }
 
     void remove_random_link()
@@ -120,24 +202,39 @@ public:
         auto [from, to] = this->choose_random_existing_link();
 
         this->edge_count -= 1;
-        add_link(this->non_edges, from, to);
         remove_link(this->edges, from, to);
     }
 
     void remove_all_links_from_random_node()
     {
-        static std::mt19937 rng(time(nullptr));
-        std::uniform_int_distribution<int> uni(0, this->edges.size() - 1); // Guaranteed unbiased
-        int node = uni(rng);
+        int node = generate_random_number(this->number_of_nodes());
         this->remove_all_node_links(node);
     }
 
-    void get_degree_distribution(std::vector<int> &degree_distribution)
+    void get_degree_distribution(std::vector<unsigned short int> &degree_distribution)
     {
         for (int node = 0; node < this->number_of_nodes(); node++)
         {
             degree_distribution[node] = this->edges[node].size();
         }
+    }
+
+    int get_size_of_biggest_component()
+    {
+        int size_of_biggest_component = 0;
+        std::vector<bool> visited(this->number_of_nodes(), false);
+        for (int node = 0; node < this->number_of_nodes(); node++)
+        {
+            if (!visited[node])
+            {
+                int node_component_size = bfs(this->edges, node, visited);
+                if (node_component_size > size_of_biggest_component)
+                {
+                    size_of_biggest_component = node_component_size;
+                }
+            }
+        }
+        return size_of_biggest_component;
     }
 };
 
