@@ -36,6 +36,7 @@ void simulate_avg_degree(Graph *g, int max_simulation_steps, std::pair<int, int>
     std::ofstream results_file(filename);
     // 1 / gcd
     std::pair<int, int> min_step = {gcd(alpha.second, r.second), lcm(alpha.first, r.first)};
+    std::cout << "Steps are of size: " << min_step.first << '/' << min_step.second << std::endl;
     // (1/alpha)/(1/gcd)
     int alpha_period = (alpha.second * min_step.second) / (alpha.first * min_step.first);
     // (1/r)/(1/gcd)
@@ -75,6 +76,7 @@ void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<
     std::ofstream results_file(filename);
     // 1 / gcd
     std::pair<int, int> min_step = {gcd(alpha.second, r.second), lcm(alpha.first, r.first)};
+    std::cout << "Steps are of size: " << min_step.first << '/' << min_step.second << std::endl;
     // (1/alpha)/(1/gcd)
     int alpha_period = (alpha.second * min_step.second) / (alpha.first * min_step.first);
     // (1/r)/(1/gcd)
@@ -121,6 +123,7 @@ void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::p
     std::ofstream results_file(filename);
     // 1 / gcd
     std::pair<int, int> min_step = {gcd(alpha.second, r.second), lcm(alpha.first, r.first)};
+    std::cout << "Steps are of size: " << min_step.first << '/' << min_step.second << std::endl;
     // (1/alpha)/(1/gcd)
     int alpha_period = (alpha.second * min_step.second) / (alpha.first * min_step.first);
     // (1/r)/(1/gcd)
@@ -171,7 +174,7 @@ int main()
                            "_r_" + std::to_string(r.first) + "d" + std::to_string(r.second) +
                            ".txt";
 
-    // simulate_degree_distribution(g, max_simulation_steps, alpha, r, filename);
+    simulate_degree_distribution(g, max_simulation_steps, alpha, r, filename);
     // simulate_avg_degree(g, max_simulation_steps, alpha, r, filename);
-    simulate_size_of_giant_component(g, max_simulation_steps, alpha, r, filename);
+    // simulate_size_of_giant_component(g, max_simulation_steps, alpha, r, filename);
 }
