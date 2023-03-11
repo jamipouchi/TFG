@@ -46,7 +46,6 @@ private:
             node++;
         };
 
-
         int link_index = index_to_add - link_count;
 
         this->edges[node].insert(node);
@@ -68,27 +67,6 @@ private:
         this->edges[node].erase(node);
 
         return {node, to};
-        /*
-        // naive approach;
-        int to = 0;
-        int empty = 0;
-        while (true)
-        {
-            if (to != node)
-            {
-                if (this->edges[node].find(to) == this->edges[node].end()) // edge not in set
-                {
-                    empty++;
-                    if (empty >= link_index)
-                    {
-                        break;
-                    }
-                }
-            }
-            to++;
-        }
-        return {node, to};
-        */
     }
 
     static void add_link(std::vector<std::set<unsigned short int>> &edges, int from, int to)

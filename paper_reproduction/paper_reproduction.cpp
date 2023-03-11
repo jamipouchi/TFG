@@ -31,7 +31,7 @@ int lcm(int a, int b)
     return (a * b) / gcd(a, b);
 }
 
-void simulate_avg_degree(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string &filename)
+void simulate_avg_degree(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename)
 {
     std::ofstream results_file(filename);
     // 1 / gcd
@@ -71,7 +71,7 @@ void simulate_avg_degree(Graph *g, int max_simulation_steps, std::pair<int, int>
     results_file.close();
 }
 
-void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string &filename)
+void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename)
 {
     std::ofstream results_file(filename);
     // 1 / gcd
@@ -118,7 +118,7 @@ void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<
     results_file.close();
 }
 
-void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string &filename)
+void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename)
 {
     std::ofstream results_file(filename);
     // 1 / gcd
@@ -158,6 +158,42 @@ void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::p
     results_file.close();
 }
 
+int ask_for_num_shots() {
+    std::cout << "How many shots do you want to run?" << std::endl;
+    int num_shots;
+    std::cin >> num_shots;
+    return num_shots;
+}
+
+enum Simulation
+{
+    avg_degree,
+    degree_distribution,
+    giant_component
+};
+
+Simulation ask_method()
+{
+    std::cout << "Which simulation do you want to run?" << std::endl;
+    std::cout << "  1. Avg degree" << std::endl;
+    std::cout << "  2. Degree distribution" << std::endl;
+    std::cout << "  3. Giant component" << std::endl;
+
+    int choice;
+    std::cin >> choice;
+    switch (choice)
+    {
+    case 1:
+        return avg_degree;
+    case 2:
+        return degree_distribution;
+    case 3:
+        return giant_component;
+    default:
+        return ask_method();
+    }
+}
+
 int main()
 {
     int number_of_nodes = ask_for_int("number of nodes");
@@ -166,16 +202,46 @@ int main()
     std::pair<int, int> alpha = ask_for_pair_of_int("alpha");
     std::pair<int, int> r = ask_for_pair_of_int("r");
 
-    Graph *g = new Graph(number_of_nodes);
 
-    std::string filename = "nodes_" + std::to_string(number_of_nodes) +
-                           "_steps_" + std::to_string(max_simulation_steps) +
-                           "_alpha_" + std::to_string(alpha.first) + "d" + std::to_string(alpha.second) +
-                           "_r_" + std::to_string(r.first) + "d" + std::to_string(r.second) +
-                           ".txt";
+    std::string pre_filename = "nodes_" + std::to_string(number_of_nodes) +
+                               "_steps_" + std::to_string(max_simulation_steps) +
+                               "_alpha_" + std::to_string(alpha.first) + "d" + std::to_string(alpha.second) +
+                               "_r_" + std::to_string(r.first) + "d" + std::to_string(r.second);
 
-    alpha.second *= 2;
-    // simulate_degree_distribution(g, max_simulation_steps, alpha, r, filename);
-    simulate_avg_degree(g, max_simulation_steps, alpha, r, filename);
-    // simulate_size_of_giant_component(g, max_simulation_steps, alpha, r, filename);
+    alpha.second *= 2; // theory.
+    int num_shots = ask_for_num_shots();
+
+    switch (ask_method())
+    {
+    case avg_degree:
+        pre_filename += "_avg_degree";
+        for (int shot = 0; shot < num_shots; shot++)
+        {
+            std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
+            Graph *g = new Graph(number_of_nodes);
+            simulate_avg_degree(g, max_simulation_steps, alpha, r, filename);
+            delete g;
+        }
+        break;
+    case degree_distribution:
+        pre_filename += "_degree_distribution.txt";
+        for (int shot = 0; shot < num_shots; shot++)
+        {
+            std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
+            Graph *g = new Graph(number_of_nodes);
+            simulate_degree_distribution(g, max_simulation_steps, alpha, r, filename);
+            delete g;
+        }
+        break;
+    case giant_component:
+        pre_filename += "_giant_component.txt";
+        for (int shot = 0; shot < num_shots; shot++)
+        {
+            std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
+            Graph *g = new Graph(number_of_nodes);
+            simulate_size_of_giant_component(g, max_simulation_steps, alpha, r, filename);
+            delete g;
+        }
+        break;
+    }
 }
