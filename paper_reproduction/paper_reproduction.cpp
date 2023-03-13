@@ -96,9 +96,18 @@ void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<
         if (some_change)
         {
             g->get_degree_distribution(degree_distribution);
+            bool first = true;
             for (int degree : degree_distribution)
             {
-                results_file << degree << ' ';
+                if (!first)
+                {
+                    results_file << ' ';
+                }
+                else
+                {
+                    first = false;
+                }
+                results_file << degree;
             }
             results_file << "\n";
             some_change = false;
@@ -158,7 +167,8 @@ void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::p
     results_file.close();
 }
 
-int ask_for_num_shots() {
+int ask_for_num_shots()
+{
     std::cout << "How many shots do you want to run?" << std::endl;
     int num_shots;
     std::cin >> num_shots;
@@ -202,7 +212,6 @@ int main()
     std::pair<int, int> alpha = ask_for_pair_of_int("alpha");
     std::pair<int, int> r = ask_for_pair_of_int("r");
 
-
     std::string pre_filename = "nodes_" + std::to_string(number_of_nodes) +
                                "_steps_" + std::to_string(max_simulation_steps) +
                                "_alpha_" + std::to_string(alpha.first) + "d" + std::to_string(alpha.second) +
@@ -224,7 +233,7 @@ int main()
         }
         break;
     case degree_distribution:
-        pre_filename += "_degree_distribution.txt";
+        pre_filename += "_degree_distribution";
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
@@ -234,7 +243,7 @@ int main()
         }
         break;
     case giant_component:
-        pre_filename += "_giant_component.txt";
+        pre_filename += "_giant_component";
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
