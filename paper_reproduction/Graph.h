@@ -214,6 +214,20 @@ public:
         }
         return size_of_biggest_component;
     }
+
+    std::vector<int> get_sizes_of_components()
+    {
+        std::vector<int> sizes_of_components;
+        std::vector<bool> visited(this->number_of_nodes(), false);
+        for (int node = 0; node < this->number_of_nodes(); node++)
+        {
+            if (!visited[node])
+            {
+                sizes_of_components.push_back(bfs(this->edges, node, visited));
+            }
+        }
+        return sizes_of_components;
+    }
 };
 
 #endif

@@ -167,6 +167,50 @@ void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::p
     results_file.close();
 }
 
+void simulate_sizes_of_components(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename)
+{
+    std::ofstream results_file(filename);
+    // 1 / gcd
+    std::pair<int, int> min_step = {gcd(alpha.second, r.second), lcm(alpha.first, r.first)};
+    results_file << float(min_step.first) / float(min_step.second) << " \n";
+    // (1/alpha)/(1/gcd)
+    int alpha_period = (alpha.second * min_step.second) / (alpha.first * min_step.first);
+    // (1/r)/(1/gcd)
+    int r_period = (r.second * min_step.second) / (r.first * min_step.first);
+
+    std::cout << "alpha_period: " << alpha_period << " r_period: " << r_period << std::endl;
+
+    bool some_change = true;
+    for (int step = 0; step < max_simulation_steps; step++)
+    {
+        if (step % 100 == 0)
+        {
+            std::cout << "step: " << step << std::endl;
+        }
+        if (some_change)
+        {
+            std::vector<int> sizes_of_components = g->get_sizes_of_components();
+            for (int size : sizes_of_components)
+            {
+                results_file << size << " ";
+            }
+            results_file << "\n";
+            some_change = false;
+        }
+        if (step % alpha_period == 0)
+        {
+            some_change = true;
+            g->add_random_link();
+        }
+        if (step % r_period == 0)
+        {
+            some_change = true;
+            g->remove_all_links_from_random_node();
+        }
+    }
+    results_file.close();
+}
+
 int ask_for_num_shots()
 {
     std::cout << "How many shots do you want to run?" << std::endl;
@@ -179,7 +223,8 @@ enum Simulation
 {
     avg_degree,
     degree_distribution,
-    giant_component
+    giant_component,
+    sizes_of_components,
 };
 
 Simulation ask_method()
@@ -188,6 +233,7 @@ Simulation ask_method()
     std::cout << "  1. Avg degree" << std::endl;
     std::cout << "  2. Degree distribution" << std::endl;
     std::cout << "  3. Giant component" << std::endl;
+    std::cout << "  4. Sizes of Components" << std::endl;
 
     int choice;
     std::cin >> choice;
@@ -199,6 +245,8 @@ Simulation ask_method()
         return degree_distribution;
     case 3:
         return giant_component;
+    case 4:
+        return sizes_of_components;
     default:
         return ask_method();
     }
@@ -249,6 +297,16 @@ int main()
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
             Graph *g = new Graph(number_of_nodes);
             simulate_size_of_giant_component(g, max_simulation_steps, alpha, r, filename);
+            delete g;
+        }
+        break;
+    case sizes_of_components:
+        pre_filename += "_sizes_of_components";
+        for (int shot = 0; shot < num_shots; shot++)
+        {
+            std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
+            Graph *g = new Graph(number_of_nodes);
+            simulate_sizes_of_components(g, max_simulation_steps, alpha, r, filename);
             delete g;
         }
         break;
