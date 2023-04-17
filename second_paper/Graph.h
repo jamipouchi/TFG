@@ -47,6 +47,17 @@ private:
         }
     }
 
+    static int find_corresponding_node(std::vector<std::set<unsigned short int>> &edges, int edge_num)
+    {
+        int node = 0;
+        while (edge_num >= edges[node].size())
+        {
+            edge_num -= int(edges[node].size());
+            node++;
+        }
+        return node;
+    }
+
     static int bfs(std::vector<std::set<unsigned short int>> &edges, int start_node, std::vector<bool> &visited)
     {
         int component_size = 0;
@@ -74,8 +85,19 @@ private:
     }
 
 public:
-    Graph(int node_count) : edge_count(0), edges(node_count, std::set<unsigned short int>())
+    Graph(int node_count, bool clique) : edge_count(0), edges(node_count, std::set<unsigned short int>())
     {
+        if (clique)
+        {
+            for (int i = 0; i < node_count; i++)
+            {
+                for (int j = i + 1; j < node_count; j++)
+                {
+                    add_link(this->edges, i, j);
+                    this->edge_count++;
+                }
+            }
+        }
     }
 
     int number_of_edges()
@@ -98,7 +120,7 @@ public:
         }
     }
 
-    void add_vertex_with_given_degree(int degree)
+    void add_vertex_uniformly_with_given_degree(int degree)
     {
         this->edges.push_back(std::set<unsigned short int>());
         this->edge_count += degree;
@@ -111,6 +133,32 @@ public:
                 to = generate_random_number(this->number_of_nodes() - 1);
             }
             add_link(this->edges, this->number_of_nodes() - 1, to);
+        }
+    }
+
+    void add_vertex_preferentially_with_given_degree(int degree)
+    {
+        // if num_nodes_amb edge < degree no podem... mirar com fer aixo. suposo que el millor es fer un try catch?? Think about that
+        if (2*this->number_of_edges() < degree) {
+            std::cout << "Error: degree is too high, adding uniformly..." << std::endl;
+            this->add_vertex_uniformly_with_given_degree(degree);
+        }
+        this->edges.push_back(std::set<unsigned short int>());
+        std::set<int> used;
+        used.insert(this->number_of_nodes() - 1);
+        for (int i = 0; i < degree; i++)
+        {
+            // We are creating a random number from [0, 2 * number_of_edges]. Each node has a probability of being chosen equal to its degree.
+            int edge_num = generate_random_number(2 * this->number_of_edges());
+            int to = find_corresponding_node(this->edges, edge_num);
+            while (used.find(to) != used.end())
+            {
+                edge_num = generate_random_number(2 * this->number_of_edges());
+                to = find_corresponding_node(this->edges, edge_num);
+            }
+            add_link(this->edges, this->number_of_nodes() - 1, to);
+            this->edge_count++;
+            used.insert(to);
         }
     }
 

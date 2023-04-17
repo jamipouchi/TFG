@@ -11,6 +11,14 @@ int ask_for_int(std::string name)
     return x;
 }
 
+bool ask_for_bool(std::string name)
+{
+    std::cout << "Do you want " + name + " (0 or 1)" << std::endl;
+    int x;
+    std::cin >> x;
+    return x == 1;
+}
+
 std::pair<int, int> ask_for_pair_of_int(std::string name)
 {
     std::cout << "Input " + name + " as numerator and denominator (n d)" << std::endl;
@@ -31,7 +39,13 @@ int lcm(int a, int b)
     return (a * b) / gcd(a, b);
 }
 
-void simulate_avg_degree(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename, int c)
+enum Attachment
+{
+    uniform,
+    preferential,
+};
+
+void simulate_avg_degree(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename, int c, Attachment attachment)
 {
     std::ofstream results_file(filename);
     // 1 / gcd
@@ -60,7 +74,14 @@ void simulate_avg_degree(Graph *g, int max_simulation_steps, std::pair<int, int>
         if (step % alpha_period == 0)
         {
             some_change = true;
-            g->add_vertex_with_given_degree(c);
+            if (attachment == uniform)
+            {
+                g->add_vertex_uniformly_with_given_degree(c);
+            }
+            else
+            {
+                g->add_vertex_preferentially_with_given_degree(c);
+            }
         }
         if (step % r_period == 0)
         {
@@ -71,7 +92,7 @@ void simulate_avg_degree(Graph *g, int max_simulation_steps, std::pair<int, int>
     results_file.close();
 }
 
-void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename, int c)
+void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename, int c, Attachment attachment)
 {
     std::ofstream results_file(filename);
     // 1 / gcd
@@ -84,8 +105,6 @@ void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<
 
     std::cout << "alpha_period: " << alpha_period << " r_period: " << r_period << std::endl;
 
-    std::vector<unsigned short int> degree_distribution(g->number_of_nodes());
-
     bool some_change = true;
     for (int step = 0; step < max_simulation_steps; step++)
     {
@@ -95,6 +114,7 @@ void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<
         }
         if (some_change)
         {
+            std::vector<unsigned short int> degree_distribution(g->number_of_nodes());
             g->get_degree_distribution(degree_distribution);
             bool first = true;
             for (int degree : degree_distribution)
@@ -116,7 +136,14 @@ void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<
         if (step % alpha_period == 0)
         {
             some_change = true;
-            g->add_vertex_with_given_degree(c);
+            if (attachment == uniform)
+            {
+                g->add_vertex_uniformly_with_given_degree(c);
+            }
+            else
+            {
+                g->add_vertex_preferentially_with_given_degree(c);
+            }
         }
         if (step % r_period == 0)
         {
@@ -127,7 +154,7 @@ void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<
     results_file.close();
 }
 
-void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename, int c)
+void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename, int c, Attachment attachment)
 {
     std::ofstream results_file(filename);
     // 1 / gcd
@@ -156,7 +183,14 @@ void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::p
         if (step % alpha_period == 0)
         {
             some_change = true;
-            g->add_vertex_with_given_degree(c);
+            if (attachment == uniform)
+            {
+                g->add_vertex_uniformly_with_given_degree(c);
+            }
+            else
+            {
+                g->add_vertex_preferentially_with_given_degree(c);
+            }
         }
         if (step % r_period == 0)
         {
@@ -167,7 +201,7 @@ void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::p
     results_file.close();
 }
 
-void simulate_sizes_of_components(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename, int c)
+void simulate_sizes_of_components(Graph *g, int max_simulation_steps, std::pair<int, int> alpha, std::pair<int, int> r, std::string filename, int c, Attachment attachment)
 {
     std::ofstream results_file(filename);
     // 1 / gcd
@@ -200,7 +234,14 @@ void simulate_sizes_of_components(Graph *g, int max_simulation_steps, std::pair<
         if (step % alpha_period == 0)
         {
             some_change = true;
-            g->add_vertex_with_given_degree(c);
+            if (attachment == uniform)
+            {
+                g->add_vertex_uniformly_with_given_degree(c);
+            }
+            else
+            {
+                g->add_vertex_preferentially_with_given_degree(c);
+            }
         }
         if (step % r_period == 0)
         {
@@ -252,9 +293,29 @@ Simulation ask_method()
     }
 }
 
+Attachment ask_attachment()
+{
+    std::cout << "Which attachment do you want to use?" << std::endl;
+    std::cout << "  1. Uniform" << std::endl;
+    std::cout << "  2. Preferential" << std::endl;
+
+    int choice;
+    std::cin >> choice;
+    switch (choice)
+    {
+    case 1:
+        return uniform;
+    case 2:
+        return preferential;
+    default:
+        return ask_attachment();
+    }
+}
+
 int main()
 {
-    int number_of_nodes = ask_for_int("number of nodes");
+    int number_of_nodes = ask_for_int("initial number of nodes");
+    bool clique = ask_for_bool("clique");
     int max_simulation_steps = ask_for_int("simulation steps");
     int c = ask_for_int("degree with which nodes are added");
 
@@ -262,12 +323,26 @@ int main()
     std::pair<int, int> r = ask_for_pair_of_int("r");
 
     std::string pre_filename = "nodes_" + std::to_string(number_of_nodes) +
+                               [clique]()
+    { return clique ? "_clique" : ""; }() +
                                "_steps_" + std::to_string(max_simulation_steps) +
                                "_c_" + std::to_string(c) +
                                "_r_" + std::to_string(r.first) + "d" + std::to_string(r.second);
 
-    alpha.second *= 2; // theory.
+    // alpha.second *= 2; We don't do that now. We add a node each step and that's it.
     int num_shots = ask_for_num_shots();
+
+    Attachment attachment = ask_attachment();
+
+    switch (attachment)
+    {
+    case uniform:
+        pre_filename += "_uniform";
+        break;
+    case preferential:
+        pre_filename += "_preferential";
+        break;
+    }
 
     switch (ask_method())
     {
@@ -276,8 +351,8 @@ int main()
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
-            Graph *g = new Graph(number_of_nodes);
-            simulate_avg_degree(g, max_simulation_steps, alpha, r, filename, c);
+            Graph *g = new Graph(number_of_nodes, clique);
+            simulate_avg_degree(g, max_simulation_steps, alpha, r, filename, c, attachment);
             delete g;
         }
         break;
@@ -286,8 +361,8 @@ int main()
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
-            Graph *g = new Graph(number_of_nodes);
-            simulate_degree_distribution(g, max_simulation_steps, alpha, r, filename, c);
+            Graph *g = new Graph(number_of_nodes, clique);
+            simulate_degree_distribution(g, max_simulation_steps, alpha, r, filename, c, attachment);
             delete g;
         }
         break;
@@ -296,8 +371,8 @@ int main()
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
-            Graph *g = new Graph(number_of_nodes);
-            simulate_size_of_giant_component(g, max_simulation_steps, alpha, r, filename, c);
+            Graph *g = new Graph(number_of_nodes, clique);
+            simulate_size_of_giant_component(g, max_simulation_steps, alpha, r, filename, c, attachment);
             delete g;
         }
         break;
@@ -306,8 +381,8 @@ int main()
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
-            Graph *g = new Graph(number_of_nodes);
-            simulate_sizes_of_components(g, max_simulation_steps, alpha, r, filename, c);
+            Graph *g = new Graph(number_of_nodes, clique);
+            simulate_sizes_of_components(g, max_simulation_steps, alpha, r, filename, c, attachment);
             delete g;
         }
         break;
