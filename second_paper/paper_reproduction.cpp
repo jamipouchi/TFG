@@ -129,7 +129,7 @@ void simulate_degree_distribution(Graph *g, int max_simulation_steps, std::pair<
                 }
                 results_file << degree;
             }
-            results_file << "\n";
+            results_file << std::endl;
             some_change = false;
         }
 
@@ -177,7 +177,7 @@ void simulate_size_of_giant_component(Graph *g, int max_simulation_steps, std::p
         if (some_change)
         {
             int size_of_giant_component = g->get_size_of_biggest_component();
-            results_file << size_of_giant_component << "\n";
+            results_file << size_of_giant_component << " " << g->number_of_nodes() << "\n";
             some_change = false;
         }
         if (step % alpha_period == 0)
@@ -252,14 +252,6 @@ void simulate_sizes_of_components(Graph *g, int max_simulation_steps, std::pair<
     results_file.close();
 }
 
-int ask_for_num_shots()
-{
-    std::cout << "How many shots do you want to run?" << std::endl;
-    int num_shots;
-    std::cin >> num_shots;
-    return num_shots;
-}
-
 enum Simulation
 {
     avg_degree,
@@ -324,13 +316,12 @@ int main()
 
     std::string pre_filename = "nodes_" + std::to_string(number_of_nodes) +
                                [clique]()
-    { return clique ? "_clique" : ""; }() +
+    { return clique ? "_clique" : "_not-clique"; }() +
                                "_steps_" + std::to_string(max_simulation_steps) +
                                "_c_" + std::to_string(c) +
                                "_r_" + std::to_string(r.first) + "d" + std::to_string(r.second);
 
     // alpha.second *= 2; We don't do that now. We add a node each step and that's it.
-    int num_shots = ask_for_num_shots();
 
     Attachment attachment = ask_attachment();
 
@@ -344,20 +335,25 @@ int main()
         break;
     }
 
-    switch (ask_method())
+    Simulation method = ask_method();
+
+    int num_shots = ask_for_int("number of shots");
+
+    switch (method)
     {
     case avg_degree:
-        pre_filename += "_avg_degree";
+        pre_filename += "_avg-degree";
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
+            std::cout << filename << std::endl;
             Graph *g = new Graph(number_of_nodes, clique);
             simulate_avg_degree(g, max_simulation_steps, alpha, r, filename, c, attachment);
             delete g;
         }
         break;
     case degree_distribution:
-        pre_filename += "_degree_distribution";
+        pre_filename += "_degree-distribution";
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
@@ -367,7 +363,7 @@ int main()
         }
         break;
     case giant_component:
-        pre_filename += "_giant_component";
+        pre_filename += "_giant-component";
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";
@@ -377,7 +373,7 @@ int main()
         }
         break;
     case sizes_of_components:
-        pre_filename += "_sizes_of_components";
+        pre_filename += "_sizes-of-components";
         for (int shot = 0; shot < num_shots; shot++)
         {
             std::string filename = pre_filename + "(" + std::to_string(shot) + ").txt";

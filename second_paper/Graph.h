@@ -132,6 +132,7 @@ public:
             {
                 to = generate_random_number(this->number_of_nodes() - 1);
             }
+            used.insert(to);
             add_link(this->edges, this->number_of_nodes() - 1, to);
         }
     }
@@ -165,7 +166,23 @@ public:
     void delete_random_vertex()
     {
         int node = generate_random_number(this->number_of_nodes());
-        this->remove_all_node_links(node);
+        this->edge_count -= this->edges[node].size();
+        for (int i = 0; i < this->number_of_nodes(); i++)
+        {
+            std::set<unsigned short int> new_edges;
+            for (auto edge : this->edges[i])
+            {
+                if (edge > node)
+                {
+                    new_edges.insert(edge - 1);
+                }
+                else if (edge < node)
+                {
+                    new_edges.insert(edge);
+                }
+            }
+            this->edges[i] = new_edges;
+        }
         this->edges.erase(this->edges.begin() + node);
     }
 
